@@ -9,14 +9,22 @@
   let cellSize = 25; // Default size
   let boardWidth = 10 * cellSize;
   let boardHeight = 20 * cellSize;
+  let isDesktop = window.innerWidth >= 768; // Detect device type
   
-  // Resize board based on window size
+  // Resize board based on window size and device type
   function updateBoardSize() {
     const container = document.querySelector('.canvas-container');
     if (!container) return;
     
+    // Update device type detection
+    isDesktop = window.innerWidth >= 768;
+    
+    const viewportHeight = window.innerHeight;
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
+    
+    // Maximum height constraint - don't let the board get too big on any device
+    const maxAllowedHeight = isDesktop ? viewportHeight * 0.8 : viewportHeight * 0.6;
     
     // Calculate the maximum possible cell size that would fit in the container
     // while maintaining the 10:20 ratio of the game board
@@ -27,12 +35,12 @@
     
     if (containerRatio > boardRatio) {
       // Container is wider than the board ratio, so height is the limiting factor
-      maxHeight = containerHeight;
+      maxHeight = Math.min(containerHeight, maxAllowedHeight);
       maxWidth = maxHeight * boardRatio;
     } else {
       // Container is taller than the board ratio, so width is the limiting factor
       maxWidth = containerWidth;
-      maxHeight = maxWidth / boardRatio;
+      maxHeight = Math.min(maxWidth / boardRatio, maxAllowedHeight);
     }
     
     // Calculate cell size based on available space
@@ -45,12 +53,28 @@
     // Update board dimensions
     boardWidth = 10 * cellSize;
     boardHeight = 20 * cellSize;
+    
+    // Notify parent components that size has changed if needed
+    dispatchEvent(new CustomEvent('boardsizechange', { 
+      detail: { width: boardWidth, height: boardHeight, isDesktop } 
+    }));
   }
+  
+  // Declare handleResize at module level so it can be referenced in onMount cleanup
+  let handleResize: () => void;
   
   // Update on mount and window resize
   $: if (typeof window !== 'undefined') {
     updateBoardSize();
-    window.addEventListener('resize', updateBoardSize);
+    // Use debounced resize handler to improve performance
+    let resizeTimer: number;
+    handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        updateBoardSize();
+      }, 100);
+    };
+    window.addEventListener('resize', handleResize);
   }
   
   // Calculate shadow position for the current piece
@@ -172,10 +196,19 @@
   
   onMount(() => {
     drawBoard();
+    updateBoardSize();
     return () => {
-      // Cleanup if needed
+      // Cleanup resize listeners when component is destroyed
+      window.removeEventListener('resize', handleResize);
     };
   });
+  
+  // Function to dispatch custom events
+  function dispatchEvent(event: Event): void {
+    if (canvasElement) {
+      canvasElement.dispatchEvent(event);
+    }
+  }
 </script>
 
 <div class="canvas-container">
@@ -195,12 +228,38 @@
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    padding: 10px;
+    box-sizing: border-box;
   }
   
   canvas {
     display: block;
     max-width: 100%;
-    height: 100%;
+    max-height: 100%;
     image-rendering: pixelated;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Media queries for responsive design */
+  @media (min-width: 768px) {
+    /* Desktop styles */
+    .canvas-container {
+      padding: 20px;
+    }
+    
+    canvas {
+      max-height: 80vh;
+    }
+  }
+  
+  @media (max-width: 767px) {
+    /* Mobile styles */
+    .canvas-container {
+      padding: 5px;
+    }
+    
+    canvas {
+      max-height: 60vh;
+    }
   }
 </style>

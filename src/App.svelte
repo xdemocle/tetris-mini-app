@@ -11,10 +11,16 @@
     vibrate,
   } from "./lib/telegram";
   import type { GameAction, LeaderboardEntry } from "./lib/types";
-  
-  // View state
+
+  // View and device state
   let currentView = $state("welcome"); // welcome, game, settings
-  
+  let isMobile = $state(window.innerWidth < 768); // Track device type for responsive layout
+
+  // Setup device detection and responsive behavior
+  function updateDeviceType() {
+    isMobile = window.innerWidth < 768;
+  }
+
   // Game timer
   let gameTime = $state(0); // Time in seconds
   let gameTimerInterval: number | null = null;
@@ -33,18 +39,18 @@
   let touchStartX = 0;
   let touchStartY = 0;
   let isTouching = false;
-  
+
   // View navigation functions
   function startGame() {
     currentView = "game";
     newGame();
     startGameTimer();
   }
-  
+
   function showSettings() {
     currentView = "settings";
   }
-  
+
   function goToWelcome() {
     currentView = "welcome";
     stopGameLoop();
@@ -65,33 +71,33 @@
       }
     }, 16); // ~60fps
   }
-  
+
   // Game timer functions
   function startGameTimer() {
     // Reset timer when starting a new game
     gameTime = 0;
-    
+
     // Clear any existing timer
     stopGameTimer();
-    
+
     // Start a new timer that increments every second
     gameTimerInterval = window.setInterval(() => {
       gameTime++;
     }, 1000);
   }
-  
+
   function stopGameTimer() {
     if (gameTimerInterval) {
       window.clearInterval(gameTimerInterval);
       gameTimerInterval = null;
     }
   }
-  
+
   // Format time as MM:SS
   function formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
 
   // Stop the game loop
@@ -334,12 +340,13 @@
 </script>
 
 <main
+  class={isMobile ? "mobile-view" : "desktop-view"}
   ontouchstart={handleTouchStart}
   ontouchmove={handleTouchMove}
   ontouchend={handleTouchEnd}
   ondblclick={handleDoubleTap}
 >
-  <div class="phone-container">
+  <div class="app-container">
     {#if currentView === "welcome"}
       <div class="welcome-view">
         <div class="tetris-logo">
@@ -358,7 +365,8 @@
         </div>
         <div class="welcome-buttons">
           <button class="welcome-button" onclick={startGame}>PLAY</button>
-          <button class="welcome-button" onclick={showSettings}>SETTINGS</button>
+          <button class="welcome-button" onclick={showSettings}>SETTINGS</button
+          >
         </div>
       </div>
     {:else if currentView === "settings"}
@@ -382,46 +390,51 @@
       </div>
 
       <div class="game-container">
-      <div class="top-controls">
-        <div class="next-piece-display">
-          <div class="control-label">Next</div>
-          <NextPiece
-            nextPiece={gameState.nextPiece}
-            nextPieces={gameState.nextPieces}
-          />
+        <div class="top-controls">
+          <div class="next-piece-display">
+            <div class="control-label">Next</div>
+            <NextPiece
+              nextPiece={gameState.nextPiece}
+              nextPieces={gameState.nextPieces}
+            />
+          </div>
+        </div>
+
+        <div class="game-board-wrapper">
+          <GameBoard {gameState} />
+        </div>
+
+        <div class="bottom-controls">
+          <div class="level-score">
+            <div class="level-display">
+              <div class="control-label">Level</div>
+              <div class="value">{gameState.level}</div>
+            </div>
+
+            <div class="score-display">
+              <div class="control-label">Score</div>
+              <div class="value">{gameState.score}</div>
+            </div>
+
+            <button
+              class="pause-button"
+              onclick={togglePause}
+              style="padding-left: {gameState.isPaused ? '3px' : '0'}"
+            >
+              {gameState.isPaused ? "▶" : "⏸"}
+            </button>
+          </div>
+        </div>
+
+        <div class="hidden-controls" style="display: none;">
+          <button class="control-button" onclick={handleLeftButton}>←</button>
+          <button class="control-button" onclick={handleRotateButton}>↑</button>
+          <button class="control-button" onclick={handleDownButton}>↓</button>
+          <button class="control-button" onclick={handleRightButton}>→</button>
+          <button class="control-button" onclick={handleDropButton}>DROP</button
+          >
         </div>
       </div>
-
-      <div class="game-board-wrapper">
-        <GameBoard {gameState} />
-      </div>
-
-      <div class="bottom-controls">
-        <div class="level-score">
-          <div class="level-display">
-            <div class="control-label">Level</div>
-            <div class="value">{gameState.level}</div>
-          </div>
-
-          <div class="score-display">
-            <div class="control-label">Score</div>
-            <div class="value">{gameState.score}</div>
-          </div>
-
-          <button class="pause-button" onclick={togglePause}>
-            {gameState.isPaused ? "▶" : "⏸"}
-          </button>
-        </div>
-      </div>
-
-      <div class="hidden-controls" style="display: none;">
-        <button class="control-button" onclick={handleLeftButton}>←</button>
-        <button class="control-button" onclick={handleRotateButton}>↑</button>
-        <button class="control-button" onclick={handleDownButton}>↓</button>
-        <button class="control-button" onclick={handleRightButton}>→</button>
-        <button class="control-button" onclick={handleDropButton}>DROP</button>
-      </div>
-    </div>
     {/if}
   </div>
 </main>
@@ -430,19 +443,20 @@
   :global(body) {
     margin: 0;
     padding: 0;
-    font-family: "Press Start 2P", monospace, sans-serif;
-    background-color: #121212;
-    color: #fff;
-  }
-
-  :global(body) {
     background-color: #6b88c9;
-    margin: 0;
-    padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
       Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
   }
-  
+
+  :global(html) {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
   /* Welcome screen styles */
   .welcome-view {
     display: flex;
@@ -471,34 +485,38 @@
     }
   }
 
-  .phone-container {
+  .app-container {
     display: flex;
     flex-direction: column;
     background-color: white;
-    border-radius: 40px;
     width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Desktop styling */
+  .desktop-view .app-container {
     max-width: 375px;
     height: 90vh;
     max-height: 812px;
-    overflow: hidden;
+    border-radius: 40px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   }
 
-  @media (max-width: 430px) {
-    .phone-container {
-      width: 100%;
-      height: 100%;
-      max-height: none;
-      border-radius: 0;
-      box-shadow: none;
-    }
+  /* Mobile styling */
+  .mobile-view .app-container {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .status-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 20px;
+    padding: 15px 20px 0;
     background-color: #f8f8f8;
   }
 
@@ -537,6 +555,19 @@
     flex: 1;
     padding: 10px;
     gap: 10px;
+    box-sizing: border-box;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .mobile-view .game-container {
+    padding: 5px;
+    gap: 5px;
+  }
+
+  .desktop-view .game-container {
+    padding: 10px;
   }
 
   .top-controls {
@@ -544,6 +575,7 @@
     justify-content: center;
     margin-bottom: 5px;
     height: auto;
+    flex-shrink: 0; /* Prevent top controls from shrinking */
   }
 
   .next-piece-display {
@@ -581,11 +613,26 @@
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    box-sizing: border-box;
+    min-height: 0; /* Critical for flex container to allow shrinking */
+  }
+
+  /* Responsive game board */
+  .desktop-view .game-board-wrapper {
+    max-height: calc(
+      100% - 140px
+    ); /* Reserve space for top and bottom controls */
+  }
+
+  .mobile-view .game-board-wrapper {
+    padding: 5px;
+    border-radius: 10px;
   }
 
   .bottom-controls {
     display: flex;
     margin-top: 10px;
+    flex-shrink: 0; /* Prevent bottom controls from shrinking */
   }
 
   .level-score {
@@ -596,6 +643,7 @@
     border-radius: 16px;
     padding: 10px 20px;
     width: 100%;
+    height: 60px; /* Fixed height to prevent layout shifts */
   }
 
   .level-display,
@@ -616,13 +664,13 @@
     border: 2px solid white;
     color: white;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 20px;
   }
 
   .hidden-controls {
@@ -651,7 +699,7 @@
   .control-button:active {
     background-color: #555;
   }
-  
+
   /* Tetris logo and pieces */
   .tetris-logo {
     display: flex;
@@ -659,7 +707,7 @@
     align-items: center;
     margin-bottom: 60px;
   }
-  
+
   .tetris-logo h1 {
     font-size: 42px;
     font-weight: bold;
@@ -667,7 +715,7 @@
     margin-top: 30px;
     letter-spacing: 2px;
   }
-  
+
   .tetris-pieces {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -676,25 +724,25 @@
     width: 120px;
     height: 120px;
   }
-  
+
   .tetris-piece {
     width: 100%;
     height: 100%;
     border-radius: 2px;
   }
-  
+
   .tetris-piece.yellow {
-    background-color: #FFD700;
+    background-color: #ffd700;
   }
-  
+
   .tetris-piece.red {
-    background-color: #FF4136;
+    background-color: #ff4136;
   }
-  
+
   .tetris-piece.blue {
-    background-color: #0074D9;
+    background-color: #0074d9;
   }
-  
+
   /* Welcome buttons */
   .welcome-buttons {
     display: flex;
@@ -703,7 +751,7 @@
     max-width: 300px;
     gap: 20px;
   }
-  
+
   .welcome-button {
     background-color: #222;
     color: white;
@@ -716,11 +764,11 @@
     text-transform: uppercase;
     transition: background-color 0.2s;
   }
-  
+
   .welcome-button:hover {
     background-color: #444;
   }
-  
+
   /* Settings view */
   .settings-view {
     display: flex;
@@ -728,7 +776,7 @@
     height: 100%;
     background-color: #f0f0f0;
   }
-  
+
   .settings-header {
     display: flex;
     align-items: center;
@@ -736,7 +784,7 @@
     background-color: #222;
     color: white;
   }
-  
+
   .back-button {
     background: none;
     border: none;
@@ -745,7 +793,7 @@
     cursor: pointer;
     margin-right: 15px;
   }
-  
+
   .settings-content {
     padding: 20px;
     flex: 1;
