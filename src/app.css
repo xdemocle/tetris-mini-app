@@ -1,0 +1,222 @@
+/* Import the Press Start 2P font properly */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Fallback font-face declaration if needed */
+@font-face {
+  font-family: 'Press Start 2P Fallback';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Courier New'), local('Courier'), local('monospace');
+}
+
+:root {
+  --bg-color: #6b88c9; /* Updated to match our new blue background */
+  --text-color: #ffffff;
+  --grid-color: #333333;
+  --grid-border: #444444;
+  --accent-color: #00ff00;
+  --button-color: #333333;
+  --button-text: #ffffff;
+  --button-hover: #555555;
+  /* Tetromino colors with bright, distinct values */
+  --tetromino-i: #00FFFF; /* Cyan */
+  --tetromino-j: #0000FF; /* Blue */
+  --tetromino-l: #FFA500; /* Orange */
+  --tetromino-o: #FFFF00; /* Yellow */
+  --tetromino-s: #00FF00; /* Green */
+  --tetromino-t: #FF00FF; /* Magenta/Pink */
+  --tetromino-z: #FF0000; /* Red */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark {
+  --bg-color: #1a1a1a;
+  --text-color: #ffffff;
+  --grid-color: #333333;
+  --grid-border: #444444;
+}
+
+.light {
+  --bg-color: #f0f0f0;
+  --text-color: #000000;
+  --grid-color: #dddddd;
+  --grid-border: #bbbbbb;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html, body {
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1.5;
+  font-weight: 400;
+  font-size: 16px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@media (max-width: 430px) {
+  #app {
+    width: 100vw;
+    height: 100vh;
+  }
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.game-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 0 var(--shadow-color);
+  color: var(--accent-color);
+}
+
+.game-board {
+  border: 2px solid var(--grid-border);
+  background-color: var(--grid-color);
+  box-shadow: 0 0 10px var(--shadow-color);
+}
+
+.game-cell {
+  border: 1px solid var(--grid-border);
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.control-button {
+  background-color: var(--button-color);
+  color: var(--button-text);
+  border: none;
+  border-radius: 4px;
+  padding: 10px 15px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.control-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 1rem;
+}
+
+.score-display, .level-display, .lines-display {
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.next-piece {
+  border: 0;
+  background-color: var(--grid-color);
+  margin-top: 0.5rem;
+}
+
+.leaderboard {
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 300px;
+  background-color: var(--grid-color);
+  border: 2px solid var(--grid-border);
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.leaderboard-title {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.leaderboard-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+@media (max-height: 600px) {
+  .game-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .controls {
+    margin-top: 0.5rem;
+  }
+  
+  .game-info {
+    margin-top: 0.5rem;
+  }
+  
+  .next-piece {
+    margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .control-button {
+    padding: 8px 12px;
+    font-size: 0.6rem;
+  }
+  
+  .game-info {
+    max-width: 280px;
+  }
+}
