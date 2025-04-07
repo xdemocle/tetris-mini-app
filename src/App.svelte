@@ -11,6 +11,13 @@
     vibrate,
   } from "./lib/telegram";
   import type { GameAction, LeaderboardEntry } from "./lib/types";
+  
+  // View state
+  let currentView = $state("welcome"); // welcome, game, settings
+  
+  // Game timer
+  let gameTime = $state(0); // Time in seconds
+  let gameTimerInterval: number | null = null;
 
   // Initialize game state with proper Svelte 5 runes
   let gameState = $state(initGameState());
@@ -26,6 +33,23 @@
   let touchStartX = 0;
   let touchStartY = 0;
   let isTouching = false;
+  
+  // View navigation functions
+  function startGame() {
+    currentView = "game";
+    newGame();
+    startGameTimer();
+  }
+  
+  function showSettings() {
+    currentView = "settings";
+  }
+  
+  function goToWelcome() {
+    currentView = "welcome";
+    stopGameLoop();
+    stopGameTimer();
+  }
 
   // Start the game loop
   function startGameLoop() {
@@ -40,6 +64,34 @@
         lastDropTime = now;
       }
     }, 16); // ~60fps
+  }
+  
+  // Game timer functions
+  function startGameTimer() {
+    // Reset timer when starting a new game
+    gameTime = 0;
+    
+    // Clear any existing timer
+    stopGameTimer();
+    
+    // Start a new timer that increments every second
+    gameTimerInterval = window.setInterval(() => {
+      gameTime++;
+    }, 1000);
+  }
+  
+  function stopGameTimer() {
+    if (gameTimerInterval) {
+      window.clearInterval(gameTimerInterval);
+      gameTimerInterval = null;
+    }
+  }
+  
+  // Format time as MM:SS
+  function formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
   // Stop the game loop
@@ -59,6 +111,7 @@
     // Handle game over
     if (action.type === "GAME_OVER") {
       stopGameLoop();
+      stopGameTimer();
       vibrate("heavy");
 
       // Submit score to leaderboard
@@ -79,9 +132,11 @@
     // Handle pause/resume
     if (action.type === "PAUSE_GAME") {
       stopGameLoop();
+      stopGameTimer();
       vibrate("light");
     } else if (action.type === "RESUME_GAME") {
       startGameLoop();
+      startGameTimer();
       vibrate("light");
     }
 
@@ -263,6 +318,7 @@
   onDestroy(() => {
     // Clean up when component is destroyed
     stopGameLoop();
+    stopGameTimer();
     window.removeEventListener("keydown", handleKeydown);
 
     // Hide back button only if supported
@@ -283,15 +339,48 @@
   ondblclick={handleDoubleTap}
 >
   <div class="phone-container">
-    <div class="status-bar">
-      <div class="time">02:12</div>
-      <div class="status-buttons">
-        <button class="status-button" onclick={newGame}>NEW GAME</button>
-        <button class="status-button" onclick={showPrizes}>PRIZES</button>
+    {#if currentView === "welcome"}
+      <div class="welcome-view">
+        <div class="tetris-logo">
+          <div class="tetris-pieces">
+            <div class="tetris-piece yellow"></div>
+            <div class="tetris-piece yellow"></div>
+            <div class="tetris-piece yellow"></div>
+            <div class="tetris-piece red"></div>
+            <div class="tetris-piece red"></div>
+            <div class="tetris-piece red"></div>
+            <div class="tetris-piece blue"></div>
+            <div class="tetris-piece blue"></div>
+            <div class="tetris-piece blue"></div>
+          </div>
+          <h1>TETRIS</h1>
+        </div>
+        <div class="welcome-buttons">
+          <button class="welcome-button" onclick={startGame}>PLAY</button>
+          <button class="welcome-button" onclick={showSettings}>SETTINGS</button>
+        </div>
       </div>
-    </div>
+    {:else if currentView === "settings"}
+      <div class="settings-view">
+        <div class="settings-header">
+          <button class="back-button" onclick={goToWelcome}>←</button>
+          <h2>Settings</h2>
+        </div>
+        <div class="settings-content">
+          <!-- Settings options will go here -->
+          <p>Settings coming soon...</p>
+        </div>
+      </div>
+    {:else}
+      <div class="status-bar">
+        <div class="time">{formatTime(gameTime)}</div>
+        <div class="status-buttons">
+          <button class="status-button" onclick={newGame}>NEW GAME</button>
+          <button class="status-button" onclick={showPrizes}>PRIZES</button>
+        </div>
+      </div>
 
-    <div class="game-container">
+      <div class="game-container">
       <div class="top-controls">
         <div class="next-piece-display">
           <div class="control-label">Next</div>
@@ -332,6 +421,7 @@
         <button class="control-button" onclick={handleDropButton}>DROP</button>
       </div>
     </div>
+    {/if}
   </div>
 </main>
 
@@ -350,6 +440,17 @@
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
       Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  }
+  
+  /* Welcome screen styles */
+  .welcome-view {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+    padding: 20px;
   }
 
   main {
@@ -548,5 +649,104 @@
 
   .control-button:active {
     background-color: #555;
+  }
+  
+  /* Tetris logo and pieces */
+  .tetris-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 60px;
+  }
+  
+  .tetris-logo h1 {
+    font-size: 42px;
+    font-weight: bold;
+    color: #222;
+    margin-top: 30px;
+    letter-spacing: 2px;
+  }
+  
+  .tetris-pieces {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+    width: 120px;
+    height: 120px;
+  }
+  
+  .tetris-piece {
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+  }
+  
+  .tetris-piece.yellow {
+    background-color: #FFD700;
+  }
+  
+  .tetris-piece.red {
+    background-color: #FF4136;
+  }
+  
+  .tetris-piece.blue {
+    background-color: #0074D9;
+  }
+  
+  /* Welcome buttons */
+  .welcome-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    gap: 20px;
+  }
+  
+  .welcome-button {
+    background-color: #222;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.2s;
+  }
+  
+  .welcome-button:hover {
+    background-color: #444;
+  }
+  
+  /* Settings view */
+  .settings-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #f0f0f0;
+  }
+  
+  .settings-header {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #222;
+    color: white;
+  }
+  
+  .back-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-right: 15px;
+  }
+  
+  .settings-content {
+    padding: 20px;
+    flex: 1;
   }
 </style>
