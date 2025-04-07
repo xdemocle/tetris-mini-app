@@ -282,6 +282,7 @@
   function newGame() {
     dispatch({ type: "NEW_GAME" });
     startGameLoop();
+    startGameTimer();
   }
 
   function showPrizes() {
