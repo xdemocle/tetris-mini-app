@@ -462,6 +462,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    flex-flow: wrap;
     align-items: center;
     height: 100%;
     background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);

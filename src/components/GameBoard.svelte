@@ -67,7 +67,7 @@
   $: if (typeof window !== 'undefined') {
     updateBoardSize();
     // Use debounced resize handler to improve performance
-    let resizeTimer: number;
+    let resizeTimer: ReturnType<typeof setTimeout>;
     handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
