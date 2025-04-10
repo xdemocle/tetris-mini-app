@@ -110,11 +110,21 @@
 
   // Dispatch game actions
   function dispatch(action: GameAction) {
+    // Store previous game state to detect transitions
+    const wasGameOver = gameState.gameOver;
+    
     // Apply the action to update game state
     // Using object spread to ensure reactivity in Svelte 5
     gameState = { ...gameReducer(gameState, action) };
 
-    // Handle game over
+    // Check if game just ended (transition to game over)
+    if (!wasGameOver && gameState.gameOver) {
+      stopGameLoop();
+      stopGameTimer();
+      vibrate("heavy");
+    }
+    
+    // Handle explicit game over action
     if (action.type === "GAME_OVER") {
       stopGameLoop();
       stopGameTimer();
@@ -382,7 +392,7 @@
       </div>
     {:else}
       <div class="status-bar">
-        <div class="time">{formatTime(gameTime)}</div>
+        <div class="time" class:game-over={gameState.gameOver}>{formatTime(gameTime)}</div>
         <div class="status-buttons">
           <button class="status-button" onclick={newGame}>NEW GAME</button>
           <button class="status-button" onclick={showPrizes}>PRIZES</button>
@@ -548,6 +558,12 @@
     background-color: #e0e0e0;
     padding: 4px 8px;
     border-radius: 5px;
+    transition: color 0.3s ease;
+  }
+  
+  .time.game-over {
+    color: #ff0000;
+    font-weight: bold;
   }
 
   .game-container {

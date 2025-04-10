@@ -255,6 +255,44 @@ describe('Line Clearing and Scoring', () => {
 });
 
 describe('Game Over Conditions', () => {
+  it('should handle timer when game transitions to game over', () => {
+    // Mock timer functions
+    const clearIntervalMock = vi.fn();
+    global.clearInterval = clearIntervalMock;
+    
+    // Create a normal game state
+    const activeState = createTestGameState({ gameOver: false });
+    
+    // Create a function that simulates the dispatch function in App.svelte
+    const timerInterval = 123; // Mock timer interval ID
+    let gameTimerStopped = false;
+    
+    const stopGameTimer = () => {
+      gameTimerStopped = true;
+      clearIntervalMock(timerInterval);
+    };
+    
+    const dispatch = (action: any) => {
+      const previousGameOver = activeState.gameOver;
+      const newState = gameReducer(activeState, action);
+      
+      // Check if game just ended and stop the timer if it did
+      if (!previousGameOver && newState.gameOver) {
+        stopGameTimer();
+      }
+      
+      return newState;
+    };
+    
+    // Trigger a game over condition
+    const gameOverAction = { type: 'GAME_OVER' };
+    dispatch(gameOverAction);
+    
+    // Verify the timer was stopped
+    expect(gameTimerStopped).toBe(true);
+    expect(clearIntervalMock).toHaveBeenCalledWith(timerInterval);
+  });
+  
   it('should detect game over when pieces stack to the top', () => {
     // For this test, we'll verify that the NEW_GAME action resets a game over state
     // First, create a game over state
